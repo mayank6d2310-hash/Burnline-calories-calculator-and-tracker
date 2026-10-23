@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Burnline: calorie calculator and tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap">
+<style>
+:root{--bg:#eef1f6;--surf:#fff;--ink:#14213d;--mute:#5d6882;--line:#d9dfeb;--acc:#2f5bff;--onacc:#fff;--p:#e0457b;--c:#f2a900;--f:#17a673;--burn:#ff6a3d;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10162a;--surf:#1a2240;--ink:#eef1fb;--mute:#a1abc6;--line:#2c3760;--acc:#7b97ff;--onacc:#10162a}}
+:root[data-theme="dark"]{--bg:#10162a;--surf:#1a2240;--ink:#eef1fb;--mute:#a1abc6;--line:#2c3760;--acc:#7b97ff;--onacc:#10162a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1,h2,.big{font-family:"Bricolage Grotesque",Figtree,system-ui,sans-serif;margin:0}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:2px 0 18px}
+.tabs{display:flex;gap:6px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:16px}
+.tabs button{flex:1;border:0;background:none;color:var(--mute);font:600 1rem Figtree,system-ui,sans-serif;padding:10px;border-radius:10px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--acc);color:var(--onacc)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:.9rem;color:var(--mute);margin-bottom:4px}
+input,select{width:100%;font:1rem Figtree,system-ui,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.full{grid-column:1/-1}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;padding:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;font:600 .95rem Figtree,system-ui,sans-serif;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--acc);background:var(--acc);color:var(--onacc)}
+.cta{width:100%;margin-top:14px;padding:13px;border:0;border-radius:12px;background:var(--acc);color:var(--onacc);font:800 1.05rem "Bricolage Grotesque",Figtree,sans-serif;cursor:pointer}
+.hero{text-align:left}
+.big{font-size:3.6rem;font-weight:800;line-height:1;letter-spacing:-.03em}
+.big small{font-size:1.1rem;font-weight:600;color:var(--mute);letter-spacing:0}
+.stats{display:flex;gap:18px;margin:12px 0 4px;color:var(--mute);font-size:.95rem}
+.stats b{color:var(--ink);font-weight:600}
+.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:14px 0 10px;background:var(--line)}
+.bar i{display:block;height:100%}
+.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.macros div{border-left:5px solid;padding-left:10px}
+.macros b{display:block;font:800 1.3rem "Bricolage Grotesque",Figtree,sans-serif}
+.macros span{color:var(--mute);font-size:.88rem}
+.track{height:20px;background:var(--line);border-radius:10px;overflow:hidden;margin:12px 0 8px}
+.track i{display:block;height:100%;background:var(--acc);transition:width .3s}
+.track i.over{background:var(--burn)}
+.row{display:flex;gap:8px;margin-top:10px}
+.row input:first-child{flex:2}.row input:nth-child(2){flex:1}
+.row button{border:0;border-radius:10px;background:var(--acc);color:var(--onacc);font:600 1rem Figtree,sans-serif;padding:0 16px;cursor:pointer}
+ul{list-style:none;margin:12px 0 0;padding:0}
+li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+li button{border:0;background:none;color:var(--mute);font-size:1.1rem;cursor:pointer;margin-left:10px}
+.neg{color:var(--burn);font-weight:600}
+.empty{color:var(--mute);padding:10px 0 0}
+.note{color:var(--mute);font-size:.85rem;margin-top:8px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.track i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Burnline</h1>
+<p class="sub">Work out your daily calories, then track what you eat and burn.</p>
+
+<div class="tabs" role="tablist">
+<button role="tab" id="t1" aria-selected="true" aria-controls="p1">Calculator</button>
+<button role="tab" id="t3" aria-selected="false" aria-controls="p3">Food calc</button>
+<button role="tab" id="t2" aria-selected="false" aria-controls="p2">Today</button>
+</div>
+
+<section id="p1" role="tabpanel" aria-labelledby="t1">
+<div class="panel"><div class="grid">
+<div class="full"><label>Units</label><div class="seg" id="units"><button aria-pressed="true" data-u="m">Metric (kg, cm)</button><button aria-pressed="false" data-u="i">Imperial (lb, in)</button></div></div>
+<div class="full"><label>Sex</label><div class="seg" id="sex"><button aria-pressed="true" data-s="m">Male</button><button aria-pressed="false" data-s="f">Female</button></div></div>
+<div><label for="age">Age (years)</label><input id="age" type="number" inputmode="numeric" value="30" min="15" max="100"></div>
+<div><label for="wt" id="wl">Weight (kg)</label><input id="wt" type="number" inputmode="decimal" value="70" min="20"></div>
+<div class="full"><label for="ht" id="hl">Height (cm)</label><input id="ht" type="number" inputmode="decimal" value="170" min="50"></div>
+<div class="full"><label for="act">Activity level</label>
+<select id="act"><option value="1.2">Mostly sitting (little exercise)</option><option value="1.375" selected>Light (1–3 workouts a week)</option><option value="1.55">Moderate (3–5 workouts a week)</option><option value="1.725">Heavy (6–7 workouts a week)</option><option value="1.9">Very heavy (physical job plus training)</option></select></div>
+<div class="full"><label for="goal">Goal</label>
+<select id="goal"><option value="-500">Lose weight (about 0.5 kg or 1 lb a week)</option><option value="-250">Lose slowly</option><option value="0" selected>Maintain weight</option><option value="250">Gain slowly</option><option value="500">Build muscle (about 0.5 kg or 1 lb a week)</option></select></div>
+</div>
+<button class="cta" id="calc">Calculate my calories</button></div>
+
+<div class="panel hero" id="res" hidden>
+<div class="big"><span id="target">0</span> <small>kcal a day</small></div>
+<div class="stats"><span>Resting burn <b id="bmr">0</b></span><span>Maintenance <b id="tdee">0</b></span></div>
+<div class="bar" aria-hidden="true"><i id="bp" style="background:var(--p)"></i><i id="bc" style="background:var(--c)"></i><i id="bf" style="background:var(--f)"></i></div>
+<div class="macros">
+<div style="border-color:var(--p)"><b id="mp">0 g</b><span>Protein</span></div>
+<div style="border-color:var(--c)"><b id="mc">0 g</b><span>Carbs</span></div>
+<div style="border-color:var(--f)"><b id="mf">0 g</b><span>Fat</span></div></div>
+<button class="cta" id="use">Use this as my daily goal</button>
+<p class="note">Uses the Mifflin-St Jeor formula. Macros split 30% protein, 40% carbs and 30% fat. These are estimates, not medical advice.</p>
+</div>
+</section>
+
+<section id="p3" role="tabpanel" aria-labelledby="t3" hidden>
+<div class="panel"><h2 style="font-size:1.2rem;margin-bottom:12px">Food calorie calculator</h2>
+<div class="grid">
+<div class="full"><label for="fsel">Food</label><select id="fsel"></select></div>
+<div id="cwrap" class="full" hidden><label for="fck">Calories per 100 g</label><input id="fck" type="number" inputmode="decimal" value="100" min="0"></div>
+<div class="full"><label for="fam" id="fal">Amount (grams)</label><input id="fam" type="number" inputmode="decimal" value="100" min="0"></div>
+</div>
+<div class="big" style="margin-top:16px"><span id="fcr">0</span> <small>kcal</small></div>
+<button class="cta" id="fadd">Add to today</button>
+<p class="note" id="fmsg" role="status"></p></div>
+<div class="panel"><h2 style="font-size:1.2rem;margin-bottom:8px">Eaten today</h2>
+<div class="big"><span id="fct">0</span> <small>kcal of <span id="fcg">0</span> goal</small></div>
+<p class="note">Foods you add appear in the Today tab, where you can remove them.</p></div>
+</section>
+
+<section id="p2" role="tabpanel" aria-labelledby="t2" hidden>
+<div class="panel">
+<h2 style="font-size:1.2rem">Today’s balance</h2>
+<div class="big"><span id="left">0</span> <small id="leftl">kcal left</small></div>
+<div class="track"><i id="fill" style="width:0"></i></div>
+<div class="stats"><span>Goal <b id="g">0</b></span><span>Eaten <b id="eaten">0</b></span><span>Burned <b id="burned">0</b></span></div>
+<label for="goalIn" style="margin-top:12px">Daily goal (kcal)</label>
+<input id="goalIn" type="number" inputmode="numeric" value="2000" min="500">
+</div>
+<div class="panel"><h2 style="font-size:1.2rem">Food</h2>
+<div class="row"><input id="fn" placeholder="e.g. Oatmeal" aria-label="Food name"><input id="fk" type="number" inputmode="numeric" placeholder="kcal" aria-label="Food calories"><button id="fa">Add food</button></div>
+<ul id="fl"></ul></div>
+<div class="panel"><h2 style="font-size:1.2rem">Exercise</h2>
+<div class="row"><input id="en" placeholder="e.g. 30 min run" aria-label="Exercise name"><input id="ek" type="number" inputmode="numeric" placeholder="kcal" aria-label="Calories burned"><button id="ea">Add exercise</button></div>
+<ul id="el"></ul></div>
+</section>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var st={u:"m",s:"m",goal:2000,food:[],ex:[]};
+try{var sv=JSON.parse(localStorage.getItem("burnline")||"null");if(sv&&typeof sv==="object"){st.goal=sv.goal||2000;st.food=sv.food||[];st.ex=sv.ex||[];}}catch(e){}
+function save(){try{localStorage.setItem("burnline",JSON.stringify({goal:st.goal,food:st.food,ex:st.ex}))}catch(e){}}
+function tab(n){["1","2","3"].forEach(function(k){$("p"+k).hidden=k!==n;$("t"+k).setAttribute("aria-selected",k===n)});}
+$("t1").onclick=function(){tab("1")};$("t2").onclick=function(){tab("2");render()};$("t3").onclick=function(){tab("3");fcCalc();fcTot()};
+function seg(id,key,attr){var bs=$(id).querySelectorAll("button");bs.forEach(function(b){b.onclick=function(){bs.forEach(function(x){x.setAttribute("aria-pressed",x===b)});st[key]=b.dataset[attr];if(key==="u")units()}})}
+function units(){var m=st.u==="m";$("wl").textContent=m?"Weight (kg)":"Weight (lb)";$("hl").textContent=m?"Height (cm)":"Height (in)";
+$("wt").value=m?70:154;$("ht").value=m?170:67}
+seg("units","u","u");seg("sex","s","s");
+var tgt=0;
+$("calc").onclick=function(){
+var age=+$("age").value,w=+$("wt").value,h=+$("ht").value;
+if(!(age>0&&w>0&&h>0)){alert("Enter your age, weight and height.");return}
+if(st.u==="i"){w*=0.45359;h*=2.54}
+var bmr=10*w+6.25*h-5*age+(st.s==="m"?5:-161);
+var tdee=bmr*(+$("act").value);
+var t=Math.max(Math.round(tdee+(+$("goal").value)),st.s==="m"?1500:1200);
+tgt=t;
+$("bmr").textContent=Math.round(bmr).toLocaleString();$("tdee").textContent=Math.round(tdee).toLocaleString();
+$("target").textContent=t.toLocaleString();
+$("mp").textContent=Math.round(t*.3/4)+" g";$("mc").textContent=Math.round(t*.4/4)+" g";$("mf").textContent=Math.round(t*.3/9)+" g";
+$("bp").style.width="30%";$("bc").style.width="40%";$("bf").style.width="30%";
+$("res").hidden=false;$("res").scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+$("use").onclick=function(){if(!tgt)return;st.goal=tgt;$("goalIn").value=tgt;save();tab("2");render()};
+$("goalIn").oninput=function(){st.goal=+this.value||0;save();render()};
+function add(list,n,k){var kc=Math.round(+$(k).value);if(!(kc>0)){$(k).focus();return}
+st[list].push({n:($(n).value.trim()||(list==="food"?"Food":"Exercise")),k:kc});$(n).value="";$(k).value="";save();render()}
+$("fa").onclick=function(){add("food","fn","fk")};$("ea").onclick=function(){add("ex","en","ek")};
+function sum(a){return a.reduce(function(s,x){return s+x.k},0)}
+function list(id,key,neg){var ul=$(id);ul.innerHTML="";
+if(!st[key].length){var li=document.createElement("li");li.className="empty";li.style.border="0";li.style.padding="10px 0 0";li.textContent=key==="food"?"Nothing logged yet. Add your first meal above.":"No exercise yet. Add a workout to earn calories back.";ul.appendChild(li);return}
+st[key].forEach(function(x,i){var li=document.createElement("li");var a=document.createElement("span");a.textContent=x.n;
+var r=document.createElement("span");var v=document.createElement("span");v.textContent=(neg?"−":"")+x.k+" kcal";if(neg)v.className="neg";
+var d=document.createElement("button");d.textContent="✕";d.setAttribute("aria-label","Remove "+x.n);d.onclick=function(){st[key].splice(i,1);save();render()};
+r.appendChild(v);r.appendChild(d);li.appendChild(a);li.appendChild(r);ul.appendChild(li)})}
+function render(){
+var e=sum(st.food),b=sum(st.ex),left=st.goal-e+b;
+$("g").textContent=st.goal.toLocaleString();$("eaten").textContent=e.toLocaleString();$("burned").textContent=b.toLocaleString();
+$("left").textContent=Math.abs(left).toLocaleString();$("leftl").textContent=left>=0?"kcal left":"kcal over";
+var net=Math.max(0,e-b),pct=st.goal>0?Math.min(100,net/st.goal*100):0;
+$("fill").style.width=pct+"%";$("fill").className=left<0?"over":"";
+$("goalIn").value=st.goal;list("fl","food",false);list("el","ex",true);fcTot()}
+var FOODS=[["Rice, cooked",130,"g"],["Roti / chapati",100,"each"],["Dal, cooked",116,"g"],["Paneer",265,"g"],["Chicken breast, cooked",165,"g"],["Egg",78,"each"],["Bread slice",80,"each"],["Oats, dry",389,"g"],["Milk, whole",61,"ml"],["Curd / yogurt",60,"g"],["Banana",105,"each"],["Apple",95,"each"],["Orange",62,"each"],["Potato, boiled",87,"g"],["Idli",58,"each"],["Plain dosa",120,"each"],["Samosa",260,"each"],["Biryani",180,"g"],["Pasta, cooked",158,"g"],["Pizza slice",285,"each"],["Salmon",208,"g"],["Tofu",76,"g"],["Broccoli",34,"g"],["Avocado",160,"g"],["Almonds",579,"g"],["Peanut butter",588,"g"],["Cheese",402,"g"],["Butter",717,"g"],["Ghee",900,"g"],["Sugar",387,"g"],["Dark chocolate",546,"g"],["Cola",42,"ml"]];
+var fs=$("fsel");
+FOODS.forEach(function(f,i){var o=document.createElement("option");o.value=i;o.textContent=f[0]+" ("+f[1]+" kcal "+(f[2]==="each"?"each":"per 100 "+f[2])+")";fs.appendChild(o)});
+var oc=document.createElement("option");oc.value="c";oc.textContent="Other food (enter calories yourself)";fs.appendChild(oc);
+function fcInfo(){var amt=+$("fam").value||0,v=fs.value,name,kc;
+if(v==="c"){kc=amt/100*(+$("fck").value||0);name="Other food, "+amt+" g"}
+else{var f=FOODS[+v];kc=f[2]==="each"?amt*f[1]:amt/100*f[1];name=f[0]+", "+amt+(f[2]==="each"?" pc":" "+f[2])}
+return{n:name,k:Math.round(kc)}}
+function fcCalc(){var v=fs.value,u="g";$("cwrap").hidden=v!=="c";
+if(v!=="c")u=FOODS[+v][2];
+$("fal").textContent=u==="each"?"Number of pieces":u==="ml"?"Amount (ml)":"Amount (grams)";
+$("fcr").textContent=fcInfo().k.toLocaleString()}
+function fcTot(){$("fct").textContent=sum(st.food).toLocaleString();$("fcg").textContent=st.goal.toLocaleString()}
+fs.onchange=function(){$("fam").value=(fs.value!=="c"&&FOODS[+fs.value][2]==="each")?1:100;$("fmsg").textContent="";fcCalc()};
+$("fam").oninput=fcCalc;$("fck").oninput=fcCalc;
+$("fadd").onclick=function(){var r=fcInfo();if(!(r.k>0)){$("fam").focus();return}
+st.food.push(r);save();render();$("fmsg").textContent="Added "+r.n+" ("+r.k+" kcal) to today."};
+fcCalc();
+render();
+})();
+</script>
+</body>
+</html>
